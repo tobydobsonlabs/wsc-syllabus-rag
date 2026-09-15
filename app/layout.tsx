@@ -14,10 +14,25 @@ const jetbrainsMono = JetBrains_Mono({
   weight: ["400", "500"],
 });
 
+const DESCRIPTION =
+  "Ask about the World Scholar's Cup 2026 syllabus and get a short answer tied to the exact section it came from, or a clear 'not covered' when it isn't.";
+
 export const metadata: Metadata = {
+  metadataBase: new URL("https://wsc-syllabus-rag.vercel.app"),
   title: "Guiding Questions Assistant",
-  description:
-    "Ask about the World Scholar's Cup 2026 syllabus and get a short answer tied to the exact section it came from, or a clear 'not covered' when it isn't.",
+  description: DESCRIPTION,
+  openGraph: {
+    title: "Guiding Questions Assistant",
+    description: DESCRIPTION,
+    url: "https://wsc-syllabus-rag.vercel.app",
+    siteName: "Guiding Questions Assistant",
+    type: "website",
+  },
+  twitter: {
+    card: "summary",
+    title: "Guiding Questions Assistant",
+    description: DESCRIPTION,
+  },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
