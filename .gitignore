@@ -32,6 +32,13 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+!.env.example
+
+# WSC corpus — never commit real syllabus notes (copyright + minors elsewhere in source).
+# Only the tiny synthetic sample is tracked so the public repo runs.
+/content/*
+!/content/sample/
+!/content/sample/**
 
 # vercel
 .vercel
