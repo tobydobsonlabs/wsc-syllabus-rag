@@ -2,7 +2,13 @@ import { embedQuery } from "./voyage";
 import { serviceClient, type MatchedChunk } from "./supabase";
 import { buildPrompt, REFUSAL_TEXT } from "./prompt";
 import { generateAnswer } from "./anthropic";
-import { RELEVANCE_FLOOR, MATCH_COUNT, MAX_QUESTION_CHARS } from "./config";
+import {
+  RELEVANCE_FLOOR,
+  MATCH_COUNT,
+  MAX_QUESTION_CHARS,
+  INPUT_USD_PER_MTOK,
+  OUTPUT_USD_PER_MTOK,
+} from "./config";
 
 export interface Source {
   n: number;
@@ -21,6 +27,8 @@ export interface RagResult {
   sources: Source[];
   topSimilarity: number;
   floor: number;
+  /** Estimated generation cost in USD, for the per-user spend cap. */
+  costUsd: number;
   /** All retrieved chunks (top-K), for eval recall scoring. Ignored by the UI. */
   retrieved: { breadcrumb: string; source_path: string; similarity: number }[];
 }
@@ -62,17 +70,21 @@ export async function answerQuestion(
     similarity: m.similarity,
   }));
 
-  // Retrieve-or-refuse: nothing close enough, so we do not answer.
+  // Retrieve-or-refuse: nothing close enough, so we do not answer (no model call).
   if (matches.length === 0 || topSimilarity < RELEVANCE_FLOOR) {
-    return { grounded: false, answer: REFUSAL_TEXT, sources: [], topSimilarity, floor: RELEVANCE_FLOOR, retrieved };
+    return { grounded: false, answer: REFUSAL_TEXT, sources: [], topSimilarity, floor: RELEVANCE_FLOOR, costUsd: 0, retrieved };
   }
 
   const { system, user } = buildPrompt(question, matches);
-  const answer = await generateAnswer(system, user);
+  const gen = await generateAnswer(system, user);
+  const answer = gen.text;
+  const costUsd =
+    (gen.inputTokens / 1e6) * INPUT_USD_PER_MTOK +
+    (gen.outputTokens / 1e6) * OUTPUT_USD_PER_MTOK;
 
   // The model may itself refuse if the sources don't actually answer it.
   if (answer.trim() === REFUSAL_TEXT) {
-    return { grounded: false, answer: REFUSAL_TEXT, sources: [], topSimilarity, floor: RELEVANCE_FLOOR, retrieved };
+    return { grounded: false, answer: REFUSAL_TEXT, sources: [], topSimilarity, floor: RELEVANCE_FLOOR, costUsd, retrieved };
   }
 
   // Show the sources the answer cited; fall back to the top 3 if it cited none.
@@ -92,5 +104,5 @@ export async function answerQuestion(
     };
   });
 
-  return { grounded: true, answer, sources, topSimilarity, floor: RELEVANCE_FLOOR, retrieved };
+  return { grounded: true, answer, sources, topSimilarity, floor: RELEVANCE_FLOOR, costUsd, retrieved };
 }

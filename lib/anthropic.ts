@@ -10,8 +10,14 @@ function getClient(): Anthropic {
   return (client ??= new Anthropic());
 }
 
+export interface Generation {
+  text: string;
+  inputTokens: number;
+  outputTokens: number;
+}
+
 /** Generate a grounded answer. Short output; grounded RAG answers are terse. */
-export async function generateAnswer(system: string, user: string): Promise<string> {
+export async function generateAnswer(system: string, user: string): Promise<Generation> {
   const res = await getClient().messages.create({
     model: ANTHROPIC_MODEL,
     max_tokens: 1024,
@@ -19,8 +25,13 @@ export async function generateAnswer(system: string, user: string): Promise<stri
     messages: [{ role: "user", content: user }],
   });
 
+  const usage = {
+    inputTokens: res.usage.input_tokens,
+    outputTokens: res.usage.output_tokens,
+  };
+
   // Safety net: if the model itself declines, surface the refusal, not empty text.
-  if (res.stop_reason === "refusal") return REFUSAL_TEXT;
+  if (res.stop_reason === "refusal") return { text: REFUSAL_TEXT, ...usage };
 
   const text = res.content
     .filter((b): b is Anthropic.TextBlock => b.type === "text")
@@ -28,5 +39,5 @@ export async function generateAnswer(system: string, user: string): Promise<stri
     .join("")
     .trim();
 
-  return text || REFUSAL_TEXT;
+  return { text: text || REFUSAL_TEXT, ...usage };
 }
