@@ -12,7 +12,8 @@
     "ingest": "tsx scripts/ingest.ts",
     "ingest:wsc": "tsx scripts/ingest.ts --wsc",
     "query": "tsx scripts/query.ts",
-    "eval": "tsx scripts/eval.ts"
+    "eval": "tsx scripts/eval.ts",
+    "check-rls": "tsx scripts/check-rls.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.125.0",

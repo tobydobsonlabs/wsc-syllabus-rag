@@ -25,6 +25,13 @@ create index if not exists chunks_embedding_idx
 
 create index if not exists chunks_subjects_idx on chunks using gin (subjects);
 
+-- Row Level Security. The app connects only with the service_role key, which
+-- BYPASSES RLS, so we enable RLS with NO policies: that denies all anon /
+-- publishable-key access via the auto-generated REST API, keeping the corpus
+-- (including copyright-sensitive text) off the public internet. The app,
+-- ingest, and match_chunks all keep working because they use the service role.
+alter table chunks enable row level security;
+
 -- Retrieval RPC. subject_filter is optional (null = search everything).
 create or replace function match_chunks(
   query_embedding vector(1024),
