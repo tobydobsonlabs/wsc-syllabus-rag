@@ -7,7 +7,10 @@
 export const VOYAGE_MODEL = process.env.VOYAGE_MODEL ?? "voyage-3.5-lite";
 export const EMBED_DIM = Number(process.env.EMBED_DIM ?? 1024);
 
-export const ANTHROPIC_MODEL = process.env.ANTHROPIC_MODEL ?? "claude-haiku-4-5-20251001";
+// Haiku 4.5 is cheap and current, and grounded RAG answers are short. Swap to
+// claude-sonnet-5 (or claude-opus-5) via env for higher quality. IDs carry no
+// date suffix.
+export const ANTHROPIC_MODEL = process.env.ANTHROPIC_MODEL ?? "claude-haiku-4-5";
 
 export const RELEVANCE_FLOOR = Number(process.env.RELEVANCE_FLOOR ?? 0.3);
 export const MATCH_COUNT = Number(process.env.MATCH_COUNT ?? 6);
