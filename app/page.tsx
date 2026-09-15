@@ -23,9 +23,9 @@ const SUBJECT_FILTER: Record<string, string> = {
 };
 
 const EXAMPLES = [
-  "What does the Special Area cover about memory?",
-  "Which sections have the heaviest named-works lists?",
-  "What is the keystone section this year?",
+  "What is the doorway effect?",
+  "Who painted Rain, Steam, and Speed?",
+  "Who wrote the play Waiting for Godot?",
 ];
 
 /** Render answer text, turning [n] into citation chips that jump to the source. */

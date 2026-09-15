@@ -21,6 +21,8 @@ export interface RagResult {
   sources: Source[];
   topSimilarity: number;
   floor: number;
+  /** All retrieved chunks (top-K), for eval recall scoring. Ignored by the UI. */
+  retrieved: { breadcrumb: string; source_path: string; similarity: number }[];
 }
 
 /** Pull the [n] citations the model actually used, in order, deduped. */
@@ -54,10 +56,15 @@ export async function answerQuestion(
 
   const matches = (data ?? []) as MatchedChunk[];
   const topSimilarity = matches[0]?.similarity ?? 0;
+  const retrieved = matches.map((m) => ({
+    breadcrumb: m.breadcrumb,
+    source_path: m.source_path,
+    similarity: m.similarity,
+  }));
 
   // Retrieve-or-refuse: nothing close enough, so we do not answer.
   if (matches.length === 0 || topSimilarity < RELEVANCE_FLOOR) {
-    return { grounded: false, answer: REFUSAL_TEXT, sources: [], topSimilarity, floor: RELEVANCE_FLOOR };
+    return { grounded: false, answer: REFUSAL_TEXT, sources: [], topSimilarity, floor: RELEVANCE_FLOOR, retrieved };
   }
 
   const { system, user } = buildPrompt(question, matches);
@@ -65,7 +72,7 @@ export async function answerQuestion(
 
   // The model may itself refuse if the sources don't actually answer it.
   if (answer.trim() === REFUSAL_TEXT) {
-    return { grounded: false, answer: REFUSAL_TEXT, sources: [], topSimilarity, floor: RELEVANCE_FLOOR };
+    return { grounded: false, answer: REFUSAL_TEXT, sources: [], topSimilarity, floor: RELEVANCE_FLOOR, retrieved };
   }
 
   // Show the sources the answer cited; fall back to the top 3 if it cited none.
@@ -85,5 +92,5 @@ export async function answerQuestion(
     };
   });
 
-  return { grounded: true, answer, sources, topSimilarity, floor: RELEVANCE_FLOOR };
+  return { grounded: true, answer, sources, topSimilarity, floor: RELEVANCE_FLOOR, retrieved };
 }

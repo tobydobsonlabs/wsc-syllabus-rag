@@ -1,0 +1,19 @@
+[
+  { "question": "Who painted Rain, Steam, and Speed?", "type": "answer", "expect": "Rain, Steam" },
+  { "question": "Who wrote the play Waiting for Godot?", "type": "answer", "expect": "Waiting for Godot" },
+  { "question": "Who composed Ambient 1: Music for Airports?", "type": "answer", "expect": "Music for Airports" },
+  { "question": "Who painted Christina's World?", "type": "answer", "expect": "Christina" },
+  { "question": "Who painted The Persistence of Memory?", "type": "answer", "expect": "Persistence of Memory" },
+  { "question": "Who painted Gare Saint-Lazare?", "type": "answer", "expect": "Gare Saint-Lazare" },
+  { "question": "Who wrote the poem Because I could not stop for Death?", "type": "answer", "expect": "Because I could not stop" },
+  { "question": "Who wrote Death Be Not Proud?", "type": "answer", "expect": "Death Be Not Proud" },
+  { "question": "Who wrote the poem Ulysses?", "type": "answer", "expect": "Ulysses" },
+  { "question": "What is the doorway effect?", "type": "answer", "expect": "Doorway Effect" },
+  { "question": "Who created the lithograph Ascending and Descending?", "type": "answer", "expect": "Ascending and Descending" },
+  { "question": "Who painted The Railway Station?", "type": "answer", "expect": "Railway Station" },
+
+  { "question": "How many questions are in the Scholar's Challenge?", "type": "no-invent" },
+  { "question": "How long is each phase of the Collaborative Writing event?", "type": "no-invent" },
+  { "question": "What is the registration fee for the Dubai Global Round?", "type": "refuse" },
+  { "question": "What is the capital of France?", "type": "refuse" }
+]
