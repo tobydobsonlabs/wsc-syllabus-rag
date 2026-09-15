@@ -9,7 +9,7 @@ That refusal is the point. The competition's facts get taught to students and us
 plausible-but-wrong answer is worse than no answer. So this is a RAG that is built to **refuse to
 hallucinate** rather than to sound confident.
 
-> **Live demo:** _(add the Vercel URL here after deploy)_
+> **Live demo:** <https://wsc-syllabus-rag.vercel.app>
 > **Attribution:** syllabus source of record — <https://themes.scholarscup.org/#/themes/2026/guidingquestions>
 
 ---
