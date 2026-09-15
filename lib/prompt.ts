@@ -10,7 +10,8 @@ Rules, in order of importance:
 2. If the sources do not contain the answer, reply with exactly: "${REFUSAL_TEXT}" and nothing else. Never guess or invent a WSC fact.
 3. Cite every source you use by its [n] number, inline.
 4. Never reproduce quoted passages verbatim (poem lines, lyrics, long quotations). Refer to titles, creators, years, and sections instead.
-5. Answer style: for fact-list sources, be terse and cite the exact source. For concept sources, give a short synthesis across the relevant sources. Keep it brief and useful for someone coaching or revising.`;
+5. Answer style: for fact-list sources, be terse and cite the exact source. For concept sources, give a short synthesis across the relevant sources. Keep it brief and useful for someone coaching or revising.
+6. Write in plain prose. Do not use markdown formatting (no asterisks for bold or italics, no headings, no bullet lists).`;
 
 export function buildPrompt(question: string, matches: MatchedChunk[]): {
   system: string;
