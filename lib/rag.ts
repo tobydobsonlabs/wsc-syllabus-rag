@@ -20,6 +20,7 @@ export interface RagResult {
   answer: string;
   sources: Source[];
   topSimilarity: number;
+  floor: number;
 }
 
 /** Pull the [n] citations the model actually used, in order, deduped. */
@@ -56,7 +57,7 @@ export async function answerQuestion(
 
   // Retrieve-or-refuse: nothing close enough, so we do not answer.
   if (matches.length === 0 || topSimilarity < RELEVANCE_FLOOR) {
-    return { grounded: false, answer: REFUSAL_TEXT, sources: [], topSimilarity };
+    return { grounded: false, answer: REFUSAL_TEXT, sources: [], topSimilarity, floor: RELEVANCE_FLOOR };
   }
 
   const { system, user } = buildPrompt(question, matches);
@@ -64,7 +65,7 @@ export async function answerQuestion(
 
   // The model may itself refuse if the sources don't actually answer it.
   if (answer.trim() === REFUSAL_TEXT) {
-    return { grounded: false, answer: REFUSAL_TEXT, sources: [], topSimilarity };
+    return { grounded: false, answer: REFUSAL_TEXT, sources: [], topSimilarity, floor: RELEVANCE_FLOOR };
   }
 
   // Show the sources the answer cited; fall back to the top 3 if it cited none.
@@ -84,5 +85,5 @@ export async function answerQuestion(
     };
   });
 
-  return { grounded: true, answer, sources, topSimilarity };
+  return { grounded: true, answer, sources, topSimilarity, floor: RELEVANCE_FLOOR };
 }
