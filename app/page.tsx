@@ -1,26 +1,30 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useState, type FormEvent, type ReactNode } from "react";
 import { ask, type AskResponse } from "./actions";
 
-const SUBJECTS = [
-  "Sci & Tech",
-  "Social Studies",
-  "History",
-  "Art & Music",
-  "Literature & Media",
-  "Special Area",
+// The fifteen 2026 Guiding Questions sections ("Are We There Yet?"), in syllabus order.
+// Selecting one seeds a starter question; the syllabus isn't split by subject anymore.
+const GUIDING_QUESTIONS = [
+  "Introductory Questions",
+  "Progress, Not Regress",
+  "More To Do Than Can Ever Be Listed",
+  "The End is Nearish",
+  "There's a Draft in Here",
+  "We're All in This to Get There",
+  "Where the Sidewalk Starts",
+  "Monkey See, Monkey Prototype",
+  "The Lovely and the Liminal",
+  "Going Pains",
+  "Home and Wandering",
+  "Where We're Going, We'll Still Need Them",
+  "Call of Duty-Free",
+  "Next Year in Futurism",
+  "Concluding Questions",
 ];
 
-// UI labels use short forms; retrieval filters on the full subject names.
-const SUBJECT_FILTER: Record<string, string> = {
-  "Sci & Tech": "Science & Technology",
-  "Social Studies": "Social Studies",
-  History: "History",
-  "Art & Music": "Art & Music",
-  "Literature & Media": "Literature & Media",
-  "Special Area": "Special Area",
-};
+const OFFICIAL_GQ_URL = "https://themes.scholarscup.org/#/themes/2026/guidingquestions";
 
 const EXAMPLES = [
   "What is the doorway effect?",
@@ -28,19 +32,71 @@ const EXAMPLES = [
   "Who wrote the play Waiting for Godot?",
 ];
 
-/** Render answer text, turning [n] into citation chips that jump to the source. */
+/**
+ * Render answer text: turn [n] into citation chips that jump to the source, and
+ * render any *emphasis* the model slips in as italics rather than stray asterisks.
+ */
 function renderAnswer(text: string): ReactNode[] {
-  return text.split(/(\[\d+\])/g).map((part, i) => {
-    const m = part.match(/^\[(\d+)\]$/);
-    if (m) {
+  return text.split(/(\[\d+\]|\*[^*\n]+\*)/g).map((part, i) => {
+    const cite = part.match(/^\[(\d+)\]$/);
+    if (cite) {
       return (
-        <a key={i} className="cite" href={`#s${m[1]}`}>
-          {m[1]}
+        <a key={i} className="cite" href={`#s${cite[1]}`}>
+          {cite[1]}
         </a>
       );
     }
+    const em = part.match(/^\*([^*\n]+)\*$/);
+    if (em) {
+      return <em key={i}>{em[1]}</em>;
+    }
     return <span key={i}>{part}</span>;
   });
+}
+
+// The five sections the model is asked to produce for a grounded answer.
+const ANSWER_SECTIONS = [
+  "Short answer",
+  "Detailed explanation",
+  "Further background",
+  "Connections across the syllabus",
+  "Key idea to remember",
+];
+
+/**
+ * Split a structured answer into its labelled sections. Tolerant of stray
+ * markdown around a heading (#, **, trailing colon). Returns null if the model
+ * didn't follow the format, so the caller can fall back to plain prose.
+ */
+function parseSections(text: string): { title: string; body: string }[] | null {
+  const norm = (s: string) =>
+    s
+      .trim()
+      .replace(/^#+\s*/, "")
+      .replace(/\*+/g, "")
+      .replace(/:$/, "")
+      .trim()
+      .toLowerCase();
+
+  const sections: { title: string; body: string }[] = [];
+  let current: { title: string; body: string } | null = null;
+
+  for (const line of text.split(/\r?\n/)) {
+    const heading = ANSWER_SECTIONS.find((s) => norm(s) === norm(line));
+    if (heading) {
+      if (current) sections.push(current);
+      current = { title: heading, body: "" };
+    } else if (current) {
+      current.body += (current.body ? "\n" : "") + line;
+    }
+  }
+  if (current) sections.push(current);
+
+  const filled = sections
+    .map((s) => ({ title: s.title, body: s.body.trim() }))
+    .filter((s) => s.body);
+
+  return filled.length >= 3 ? filled : null;
 }
 
 function kindLabel(kind: "fact-list" | "concept"): string {
@@ -48,8 +104,7 @@ function kindLabel(kind: "fact-list" | "concept"): string {
 }
 
 export default function Home() {
-  const [question, setQuestion] = useState(EXAMPLES[0]);
-  const [subject, setSubject] = useState<string | null>(null);
+  const [question, setQuestion] = useState("");
   const [asked, setAsked] = useState("");
   const [pending, setPending] = useState(false);
   const [resp, setResp] = useState<AskResponse | null>(null);
@@ -77,7 +132,7 @@ export default function Home() {
     setPending(true);
     setResp(null);
     try {
-      const r = await ask({ question: q, subject: subject ? SUBJECT_FILTER[subject] : null });
+      const r = await ask({ question: q, subject: null });
       setResp(r);
     } catch {
       setResp({ ok: false, error: "Something went wrong. Please try again." });
@@ -91,12 +146,21 @@ export default function Home() {
 
   return (
     <div className="wrap">
+      <Image
+        className="banner"
+        src="/banner.png"
+        alt="World Scholar's Cup 2026 — Are we there yet?"
+        width={2164}
+        height={727}
+        priority
+        sizes="(max-width: 812px) 100vw, 764px"
+      />
+
       <header className="top">
         <div className="brand">
           <span className="name">
             <span className="mark">?</span> Guiding Questions Assistant
           </span>
-          <span className="tag">WSC 2026 syllabus · grounded answers with sources</span>
         </div>
         <button
           className="theme-toggle"
@@ -108,31 +172,49 @@ export default function Home() {
         </button>
       </header>
 
-      <p className="purpose">
-        Ask about anything in this year&apos;s Guiding Questions and get a short answer tied to the
-        exact section it came from. If the syllabus doesn&apos;t cover it, the assistant says so
-        rather than guessing.
-      </p>
-
-      <div className="scope" role="group" aria-label="Limit to a subject area">
-        <span className="lbl">Subject</span>
-        <button
-          className="pill"
-          aria-pressed={subject === null}
-          onClick={() => setSubject(null)}
+      <div className="scope">
+        <label className="gq">
+          <span className="lbl">Guiding Question</span>
+          <span className="select">
+            <select
+              value=""
+              onChange={(e) => {
+                const gq = e.target.value;
+                if (gq) setQuestion(`What should scholars know about "${gq}"?`);
+              }}
+              aria-label="Browse the 2026 Guiding Questions"
+            >
+              <option value="">Browse the 2026 Guiding Questions…</option>
+              {GUIDING_QUESTIONS.map((gq, i) => (
+                <option key={gq} value={gq}>
+                  {i + 1}. {gq}
+                </option>
+              ))}
+            </select>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+              <path d="m6 9 6 6 6-6" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </span>
+        </label>
+        <a
+          className="official"
+          href={OFFICIAL_GQ_URL}
+          target="_blank"
+          rel="noopener noreferrer"
         >
-          All
-        </button>
-        {SUBJECTS.map((s) => (
-          <button
-            key={s}
-            className="pill"
-            aria-pressed={subject === s}
-            onClick={() => setSubject(s)}
+          View the official Guiding Questions
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
           >
-            {s}
-          </button>
-        ))}
+            <path d="M7 17 17 7M9 7h8v8" />
+          </svg>
+        </a>
       </div>
 
       <form className="ask" onSubmit={submit} autoComplete="off">
@@ -196,14 +278,29 @@ export default function Home() {
         <section className="result">
           <div className="r-head">
             <span className="status ok">
-              <span className="dot" /> Grounded
+              <span className="dot" /> Grounded in the WSC 2026 Syllabus
             </span>
             <span className="count">
               {result.sources.length} source{result.sources.length === 1 ? "" : "s"} cited
             </span>
           </div>
           <p className="q-echo">{asked}</p>
-          <div className="answer">{renderAnswer(result.answer)}</div>
+          {(() => {
+            const sections = parseSections(result.answer);
+            if (sections) {
+              return (
+                <div className="answer structured">
+                  {sections.map((s) => (
+                    <div className="ans-sec" key={s.title}>
+                      <h3>{s.title}</h3>
+                      <p>{renderAnswer(s.body)}</p>
+                    </div>
+                  ))}
+                </div>
+              );
+            }
+            return <div className="answer">{renderAnswer(result.answer)}</div>;
+          })()}
 
           {result.sources.length > 0 && (
             <div className="sources">
@@ -221,27 +318,6 @@ export default function Home() {
                       ))}
                       <span className="badge kind">{kindLabel(s.chunk_kind)}</span>
                     </div>
-                    {s.source_url && (
-                      <a
-                        className="open"
-                        href={s.source_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        Open source
-                        <svg
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          aria-hidden="true"
-                        >
-                          <path d="M7 17 17 7M9 7h8v8" />
-                        </svg>
-                      </a>
-                    )}
                   </div>
                 </article>
               ))}
