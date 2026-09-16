@@ -68,6 +68,8 @@ async function main() {
   // Retrieval metrics (answer cases only). Track all vs the hard subset.
   const ranks: number[] = []; // 0 = not retrieved in top-K
   const hardRanks: number[] = [];
+  const groundedInputTokens: number[] = []; // prompt size per grounded answer
+  const groundedCosts: number[] = [];
   let answerPass = 0;
   let refusePass = 0;
   let noInventPass = 0;
@@ -76,6 +78,10 @@ async function main() {
 
   for (const c of cases) {
     const r = await askWithRetry(c.question);
+    if (r.grounded) {
+      groundedInputTokens.push(r.inputTokens);
+      groundedCosts.push(r.costUsd);
+    }
 
     if (c.type === "answer") {
       const rank = firstRelevantRank(r.retrieved, c.expect!);
@@ -129,6 +135,10 @@ async function main() {
   console.log(`Answered + cited:       ${answerPass}/${answerCases.length}  (${pct(answerPass / answerCases.length)})`);
   console.log(`Correct refusals:       ${refusePass}/${refuseCases.length}  (${pct(refusePass / refuseCases.length)})`);
   console.log(`Unpublished, no invent: ${noInventPass}/${noInventCases.length}  (${pct(noInventPass / Math.max(1, noInventCases.length))})`);
+
+  console.log("\n=== COST (grounded answers) ===");
+  console.log(`Avg prompt tokens:      ${Math.round(mean(groundedInputTokens))}`);
+  console.log(`Avg cost per answer:    $${mean(groundedCosts).toFixed(5)}`);
 
   const total = answerPass + refusePass + noInventPass;
   console.log(`\nOverall:                ${total}/${cases.length}  (${pct(total / cases.length)})`);

@@ -13,7 +13,15 @@ export const EMBED_DIM = Number(process.env.EMBED_DIM ?? 1024);
 export const ANTHROPIC_MODEL = process.env.ANTHROPIC_MODEL ?? "claude-haiku-4-5";
 
 export const RELEVANCE_FLOOR = Number(process.env.RELEVANCE_FLOOR ?? 0.3);
-export const MATCH_COUNT = Number(process.env.MATCH_COUNT ?? 6);
+
+// Two-stage retrieval: pull a wide net of candidates by vector similarity, then
+// a cross-encoder reranker keeps only the few most relevant. RETRIEVE_COUNT is
+// the vector breadth; MATCH_COUNT is how many survive into the prompt.
+export const RETRIEVE_COUNT = Number(process.env.RETRIEVE_COUNT ?? 20);
+export const MATCH_COUNT = Number(process.env.MATCH_COUNT ?? 3);
+export const RERANK_ENABLED = (process.env.RERANK_ENABLED ?? "true") !== "false";
+export const RERANK_MODEL = process.env.RERANK_MODEL ?? "rerank-2.5-lite";
+
 export const MAX_QUESTION_CHARS = Number(process.env.MAX_QUESTION_CHARS ?? 400);
 
 // Per-user (per-IP) daily spend cap for the public demo, in USD. Best-effort,
