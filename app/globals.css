@@ -1,73 +1,74 @@
 :root {
   color-scheme: light;
-  --paper: #fbfbf9;
-  --surface: #ffffff;
-  --surface-2: #f4f4f1;
-  --ink: #1b1f24;
-  --ink-soft: #3c424a;
-  --muted: #5b616b;
-  --faint: #6b7178;
-  --border: #e6e7e4;
-  --border-strong: #d6d8d3;
-  --accent: #0e7a66;
-  --accent-soft: #e3f1ec;
-  --accent-ink: #0b5f50;
-  --amber: #9c711f;
-  --amber-soft: #f5edd6;
-  --refuse: #ae4029;
-  --refuse-soft: #f7e7e2;
-  --sk-a: #efefeb;
-  --sk-b: #e2e3de;
+  --paper: #f9f4e9;
+  --surface: #fffdf7;
+  --surface-2: #f1ead9;
+  --ink: #1a2238;
+  --ink-soft: #38415a;
+  --muted: #5d6579;
+  --faint: #8a8397;
+  --border: #e7ddc8;
+  --border-strong: #d6c9ab;
+  --accent: #1e40af;
+  --accent-soft: #e6ebfa;
+  --accent-ink: #17358c;
+  --amber: #a9761b;
+  --amber-soft: #f6ecd0;
+  --refuse: #ad4025;
+  --refuse-soft: #f6e6dc;
+  --sk-a: #efe7d5;
+  --sk-b: #e3d8be;
   --on-accent: #ffffff;
 
   --ui: var(--font-ui), system-ui, -apple-system, "Segoe UI", sans-serif;
   --mono: var(--font-mono), "SF Mono", ui-monospace, Menlo, monospace;
+  --display: var(--font-display), Georgia, "Times New Roman", serif;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     color-scheme: dark;
-    --paper: #15171a;
-    --surface: #1c1f23;
-    --surface-2: #22262b;
-    --ink: #e8eae7;
-    --ink-soft: #c4c8c6;
-    --muted: #9aa0a6;
-    --faint: #7e848c;
-    --border: #2b2e33;
-    --border-strong: #3a3e44;
-    --accent: #3cbba0;
-    --accent-soft: #15302b;
-    --accent-ink: #63cfb6;
-    --amber: #d3a44c;
-    --amber-soft: #2c2616;
-    --refuse: #e0765f;
+    --paper: #12151d;
+    --surface: #191d27;
+    --surface-2: #212634;
+    --ink: #e9eaf0;
+    --ink-soft: #c6cad6;
+    --muted: #9aa0b0;
+    --faint: #757c8e;
+    --border: #2a2f3d;
+    --border-strong: #3a4155;
+    --accent: #8aa6ff;
+    --accent-soft: #1c243c;
+    --accent-ink: #adc1ff;
+    --amber: #e0b45c;
+    --amber-soft: #2c2612;
+    --refuse: #e5806a;
     --refuse-soft: #33201b;
-    --sk-a: #22262b;
-    --sk-b: #2b2f35;
-    --on-accent: #082019;
+    --sk-a: #212634;
+    --sk-b: #2b3242;
+    --on-accent: #0f1730;
   }
 }
 :root[data-theme="dark"] {
   color-scheme: dark;
-  --paper: #15171a;
-  --surface: #1c1f23;
-  --surface-2: #22262b;
-  --ink: #e8eae7;
-  --ink-soft: #c4c8c6;
-  --muted: #9aa0a6;
-  --faint: #7e848c;
-  --border: #2b2e33;
-  --border-strong: #3a3e44;
-  --accent: #3cbba0;
-  --accent-soft: #15302b;
-  --accent-ink: #63cfb6;
-  --amber: #d3a44c;
-  --amber-soft: #2c2616;
-  --refuse: #e0765f;
+  --paper: #12151d;
+  --surface: #191d27;
+  --surface-2: #212634;
+  --ink: #e9eaf0;
+  --ink-soft: #c6cad6;
+  --muted: #9aa0b0;
+  --faint: #757c8e;
+  --border: #2a2f3d;
+  --border-strong: #3a4155;
+  --accent: #8aa6ff;
+  --accent-soft: #1c243c;
+  --accent-ink: #adc1ff;
+  --amber: #e0b45c;
+  --amber-soft: #2c2612;
+  --refuse: #e5806a;
   --refuse-soft: #33201b;
-  --sk-a: #22262b;
-  --sk-b: #2b2f35;
-  --on-accent: #082019;
+  --sk-a: #212634;
+  --sk-b: #2b3242;
+  --on-accent: #0f1730;
 }
 
 * {
@@ -108,6 +109,16 @@ body {
   padding: 32px 24px 64px;
 }
 
+.banner {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 14px;
+  margin-bottom: 30px;
+  border: 1px solid var(--border-strong);
+  box-shadow: 0 1px 2px rgba(20, 22, 26, 0.05);
+}
+
 .top {
   display: flex;
   align-items: flex-start;
@@ -122,26 +133,26 @@ body {
 .brand .name {
   display: flex;
   align-items: center;
-  gap: 9px;
-  font-size: 17px;
-  font-weight: 600;
-  letter-spacing: -0.01em;
+  gap: 10px;
+  font-family: var(--display);
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.005em;
+  color: var(--accent-ink);
 }
 .brand .mark {
-  width: 23px;
-  height: 23px;
-  border-radius: 6px;
+  width: 25px;
+  height: 25px;
+  border-radius: 7px;
   background: var(--accent);
   color: var(--on-accent);
+  box-shadow: 0 0 0 2px var(--amber-soft), 0 0 0 3px var(--amber);
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-weight: 600;
-  font-size: 14px;
-}
-.brand .tag {
-  font-size: 12.5px;
-  color: var(--faint);
+  font-family: var(--ui);
+  font-weight: 700;
+  font-size: 15px;
 }
 .theme-toggle {
   font-family: var(--ui);
@@ -172,38 +183,81 @@ body {
 .scope {
   display: flex;
   flex-wrap: wrap;
-  gap: 7px;
+  gap: 12px 18px;
   align-items: center;
+  justify-content: space-between;
   margin-bottom: 14px;
 }
-.scope .lbl {
+.gq {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+.gq .lbl {
   font-size: 13px;
   color: var(--muted);
-  margin-right: 4px;
+  white-space: nowrap;
 }
-.pill {
+.select {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  min-width: 0;
+}
+.select select {
+  appearance: none;
+  -webkit-appearance: none;
   font-family: var(--ui);
   font-size: 13px;
-  color: var(--muted);
+  color: var(--ink);
   background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  padding: 5px 13px;
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  padding: 7px 34px 7px 13px;
+  max-width: 100%;
   cursor: pointer;
   transition:
-    color 0.15s,
     border-color 0.15s,
-    background 0.15s;
+    box-shadow 0.15s;
 }
-.pill:hover {
-  color: var(--ink);
-  border-color: var(--border-strong);
+.select select:hover {
+  border-color: var(--faint);
 }
-.pill[aria-pressed="true"] {
-  background: var(--accent);
-  color: var(--on-accent);
+.select select:focus-visible {
+  outline: none;
   border-color: var(--accent);
-  font-weight: 500;
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+.select svg {
+  position: absolute;
+  right: 11px;
+  width: 15px;
+  height: 15px;
+  color: var(--faint);
+  pointer-events: none;
+}
+.official {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--accent-ink);
+  text-decoration: none;
+  border-bottom: 1px solid var(--border-strong);
+  padding-bottom: 1px;
+  white-space: nowrap;
+  transition:
+    color 0.15s,
+    border-color 0.15s;
+}
+.official:hover {
+  border-color: var(--accent);
+}
+.official svg {
+  width: 13px;
+  height: 13px;
+  flex: none;
 }
 
 .ask {

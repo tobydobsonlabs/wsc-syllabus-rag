@@ -1,26 +1,30 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useState, type FormEvent, type ReactNode } from "react";
 import { ask, type AskResponse } from "./actions";
 
-const SUBJECTS = [
-  "Sci & Tech",
-  "Social Studies",
-  "History",
-  "Art & Music",
-  "Literature & Media",
-  "Special Area",
+// The fifteen 2026 Guiding Questions sections ("Are We There Yet?"), in syllabus order.
+// Selecting one seeds a starter question; the syllabus isn't split by subject anymore.
+const GUIDING_QUESTIONS = [
+  "Introductory Questions",
+  "Progress, Not Regress",
+  "More To Do Than Can Ever Be Listed",
+  "The End is Nearish",
+  "There's a Draft in Here",
+  "We're All in This to Get There",
+  "Where the Sidewalk Starts",
+  "Monkey See, Monkey Prototype",
+  "The Lovely and the Liminal",
+  "Going Pains",
+  "Home and Wandering",
+  "Where We're Going, We'll Still Need Them",
+  "Call of Duty-Free",
+  "Next Year in Futurism",
+  "Concluding Questions",
 ];
 
-// UI labels use short forms; retrieval filters on the full subject names.
-const SUBJECT_FILTER: Record<string, string> = {
-  "Sci & Tech": "Science & Technology",
-  "Social Studies": "Social Studies",
-  History: "History",
-  "Art & Music": "Art & Music",
-  "Literature & Media": "Literature & Media",
-  "Special Area": "Special Area",
-};
+const OFFICIAL_GQ_URL = "https://themes.scholarscup.org/#/themes/2026/guidingquestions";
 
 const EXAMPLES = [
   "What is the doorway effect?",
@@ -49,7 +53,6 @@ function kindLabel(kind: "fact-list" | "concept"): string {
 
 export default function Home() {
   const [question, setQuestion] = useState(EXAMPLES[0]);
-  const [subject, setSubject] = useState<string | null>(null);
   const [asked, setAsked] = useState("");
   const [pending, setPending] = useState(false);
   const [resp, setResp] = useState<AskResponse | null>(null);
@@ -77,7 +80,7 @@ export default function Home() {
     setPending(true);
     setResp(null);
     try {
-      const r = await ask({ question: q, subject: subject ? SUBJECT_FILTER[subject] : null });
+      const r = await ask({ question: q, subject: null });
       setResp(r);
     } catch {
       setResp({ ok: false, error: "Something went wrong. Please try again." });
@@ -91,12 +94,21 @@ export default function Home() {
 
   return (
     <div className="wrap">
+      <Image
+        className="banner"
+        src="/banner.png"
+        alt="World Scholar's Cup 2026 — Are we there yet?"
+        width={2164}
+        height={727}
+        priority
+        sizes="(max-width: 812px) 100vw, 764px"
+      />
+
       <header className="top">
         <div className="brand">
           <span className="name">
             <span className="mark">?</span> Guiding Questions Assistant
           </span>
-          <span className="tag">WSC 2026 syllabus · grounded answers with sources</span>
         </div>
         <button
           className="theme-toggle"
@@ -114,25 +126,49 @@ export default function Home() {
         rather than guessing.
       </p>
 
-      <div className="scope" role="group" aria-label="Limit to a subject area">
-        <span className="lbl">Subject</span>
-        <button
-          className="pill"
-          aria-pressed={subject === null}
-          onClick={() => setSubject(null)}
+      <div className="scope">
+        <label className="gq">
+          <span className="lbl">Guiding Question</span>
+          <span className="select">
+            <select
+              value=""
+              onChange={(e) => {
+                const gq = e.target.value;
+                if (gq) setQuestion(`What should scholars know about "${gq}"?`);
+              }}
+              aria-label="Browse the 2026 Guiding Questions"
+            >
+              <option value="">Browse the 2026 Guiding Questions…</option>
+              {GUIDING_QUESTIONS.map((gq, i) => (
+                <option key={gq} value={gq}>
+                  {i + 1}. {gq}
+                </option>
+              ))}
+            </select>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+              <path d="m6 9 6 6 6-6" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </span>
+        </label>
+        <a
+          className="official"
+          href={OFFICIAL_GQ_URL}
+          target="_blank"
+          rel="noopener noreferrer"
         >
-          All
-        </button>
-        {SUBJECTS.map((s) => (
-          <button
-            key={s}
-            className="pill"
-            aria-pressed={subject === s}
-            onClick={() => setSubject(s)}
+          View the official Guiding Questions
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
           >
-            {s}
-          </button>
-        ))}
+            <path d="M7 17 17 7M9 7h8v8" />
+          </svg>
+        </a>
       </div>
 
       <form className="ask" onSubmit={submit} autoComplete="off">

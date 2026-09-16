@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Archivo, JetBrains_Mono } from "next/font/google";
+import { Archivo, JetBrains_Mono, Playfair_Display } from "next/font/google";
 import "./globals.css";
 
 const archivo = Archivo({
@@ -12,6 +12,13 @@ const jetbrainsMono = JetBrains_Mono({
   variable: "--font-mono",
   subsets: ["latin"],
   weight: ["400", "500"],
+});
+
+// Display serif that echoes the banner wordmark; used sparingly for the app title.
+const playfair = Playfair_Display({
+  variable: "--font-display",
+  subsets: ["latin"],
+  weight: ["600", "700"],
 });
 
 const DESCRIPTION =
@@ -37,7 +44,10 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" className={`${archivo.variable} ${jetbrainsMono.variable}`}>
+    <html
+      lang="en"
+      className={`${archivo.variable} ${jetbrainsMono.variable} ${playfair.variable}`}
+    >
       <body>{children}</body>
     </html>
   );
