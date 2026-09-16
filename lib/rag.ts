@@ -9,17 +9,9 @@ import {
   INPUT_USD_PER_MTOK,
   OUTPUT_USD_PER_MTOK,
 } from "./config";
+import type { Source } from "./types";
 
-export interface Source {
-  n: number;
-  breadcrumb: string;
-  source_path: string;
-  source_url: string | null;
-  subjects: string[];
-  section_no: number | null;
-  chunk_kind: "fact-list" | "concept";
-  similarity: number;
-}
+export type { Source };
 
 export interface RagResult {
   grounded: boolean;
@@ -33,6 +25,14 @@ export interface RagResult {
   retrieved: { breadcrumb: string; source_path: string; similarity: number }[];
 }
 
+/** Estimated generation cost in USD from token usage, for the per-user spend cap. */
+export function estimateCost(inputTokens: number, outputTokens: number): number {
+  return (
+    (inputTokens / 1e6) * INPUT_USD_PER_MTOK +
+    (outputTokens / 1e6) * OUTPUT_USD_PER_MTOK
+  );
+}
+
 /** Pull the [n] citations the model actually used, in order, deduped. */
 function citedIndexes(answer: string, max: number): number[] {
   const found = new Set<number>();
@@ -43,22 +43,20 @@ function citedIndexes(answer: string, max: number): number[] {
   return [...found].sort((a, b) => a - b);
 }
 
-/**
- * The full query path: embed -> retrieve -> relevance floor (retrieve-or-refuse)
- * -> grounded generation -> answer + the sources actually cited.
- */
-export async function answerQuestion(
-  rawQuestion: string,
-  subject?: string | null,
-): Promise<RagResult> {
-  const question = rawQuestion.trim().slice(0, MAX_QUESTION_CHARS);
-
+/** Embed the question and retrieve the top-K chunks by cosine similarity. */
+export async function retrieveChunks(question: string): Promise<{
+  matches: MatchedChunk[];
+  topSimilarity: number;
+  retrieved: RagResult["retrieved"];
+}> {
   const embedding = await embedQuery(question);
   const sb = serviceClient();
+  // The DB function keeps an optional subject_filter (see sql/schema.sql); the UI
+  // no longer scopes by subject, so we always search the whole corpus (null).
   const { data, error } = await sb.rpc("match_chunks", {
     query_embedding: embedding,
     match_count: MATCH_COUNT,
-    subject_filter: subject ?? null,
+    subject_filter: null,
   });
   if (error) throw new Error(`match_chunks failed: ${error.message}`);
 
@@ -69,28 +67,14 @@ export async function answerQuestion(
     source_path: m.source_path,
     similarity: m.similarity,
   }));
+  return { matches, topSimilarity, retrieved };
+}
 
-  // Retrieve-or-refuse: nothing close enough, so we do not answer (no model call).
-  if (matches.length === 0 || topSimilarity < RELEVANCE_FLOOR) {
-    return { grounded: false, answer: REFUSAL_TEXT, sources: [], topSimilarity, floor: RELEVANCE_FLOOR, costUsd: 0, retrieved };
-  }
-
-  const { system, user } = buildPrompt(question, matches);
-  const gen = await generateAnswer(system, user);
-  const answer = gen.text;
-  const costUsd =
-    (gen.inputTokens / 1e6) * INPUT_USD_PER_MTOK +
-    (gen.outputTokens / 1e6) * OUTPUT_USD_PER_MTOK;
-
-  // The model may itself refuse if the sources don't actually answer it.
-  if (answer.trim() === REFUSAL_TEXT) {
-    return { grounded: false, answer: REFUSAL_TEXT, sources: [], topSimilarity, floor: RELEVANCE_FLOOR, costUsd, retrieved };
-  }
-
-  // Show the sources the answer cited; fall back to the top 3 if it cited none.
+/** Map the [n] citations in an answer to Source cards (falls back to the top 3). */
+export function buildSources(answer: string, matches: MatchedChunk[]): Source[] {
   const cited = citedIndexes(answer, matches.length);
   const chosen = cited.length ? cited : [1, 2, 3].slice(0, matches.length);
-  const sources: Source[] = chosen.map((n) => {
+  return chosen.map((n) => {
     const m = matches[n - 1];
     return {
       n,
@@ -103,6 +87,32 @@ export async function answerQuestion(
       similarity: m.similarity,
     };
   });
+}
 
-  return { grounded: true, answer, sources, topSimilarity, floor: RELEVANCE_FLOOR, costUsd, retrieved };
+/**
+ * Non-streaming query path (used by the eval + query scripts): embed -> retrieve
+ * -> relevance floor (retrieve-or-refuse) -> grounded generation -> answer + the
+ * sources actually cited. The live app streams instead, via app/api/ask, which
+ * shares retrieveChunks() and buildSources().
+ */
+export async function answerQuestion(rawQuestion: string): Promise<RagResult> {
+  const question = rawQuestion.trim().slice(0, MAX_QUESTION_CHARS);
+  const { matches, topSimilarity, retrieved } = await retrieveChunks(question);
+
+  // Retrieve-or-refuse: nothing close enough, so we do not answer (no model call).
+  if (matches.length === 0 || topSimilarity < RELEVANCE_FLOOR) {
+    return { grounded: false, answer: REFUSAL_TEXT, sources: [], topSimilarity, floor: RELEVANCE_FLOOR, costUsd: 0, retrieved };
+  }
+
+  const { system, user } = buildPrompt(question, matches);
+  const gen = await generateAnswer(system, user);
+  const costUsd = estimateCost(gen.inputTokens, gen.outputTokens);
+
+  // The model may itself refuse if the sources don't actually answer it.
+  if (gen.text.trim() === REFUSAL_TEXT) {
+    return { grounded: false, answer: REFUSAL_TEXT, sources: [], topSimilarity, floor: RELEVANCE_FLOOR, costUsd, retrieved };
+  }
+
+  const sources = buildSources(gen.text, matches);
+  return { grounded: true, answer: gen.text, sources, topSimilarity, floor: RELEVANCE_FLOOR, costUsd, retrieved };
 }

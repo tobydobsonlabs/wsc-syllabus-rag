@@ -5,25 +5,17 @@ import { RELEVANCE_FLOOR } from "../lib/config";
 /**
  * Terminal query path (milestone 4/5 verification):
  *   npm run query -- "What does the Special Area cover about memory?"
- *   npm run query -- --subject "Art & Music" "Who painted The Long Platform?"
  */
 async function main() {
-  const args = process.argv.slice(2);
-  let subject: string | null = null;
-  const si = args.indexOf("--subject");
-  if (si !== -1) {
-    subject = args[si + 1] ?? null;
-    args.splice(si, 2);
-  }
-  const question = args.join(" ").trim();
+  const question = process.argv.slice(2).join(" ").trim();
   if (!question) {
-    console.error('Usage: npm run query -- [--subject "Art & Music"] "your question"');
+    console.error('Usage: npm run query -- "your question"');
     process.exit(1);
   }
 
-  const r = await answerQuestion(question, subject);
+  const r = await answerQuestion(question);
 
-  console.log(`\nQ: ${question}${subject ? `  [subject: ${subject}]` : ""}`);
+  console.log(`\nQ: ${question}`);
   console.log(`Top similarity: ${r.topSimilarity.toFixed(3)}  (floor ${RELEVANCE_FLOOR})`);
   console.log(`Grounded: ${r.grounded}\n`);
   console.log(r.answer);

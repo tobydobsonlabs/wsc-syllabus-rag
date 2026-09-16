@@ -2,7 +2,16 @@
 
 import Image from "next/image";
 import { useEffect, useState, type FormEvent, type ReactNode } from "react";
-import { ask, type AskResponse } from "./actions";
+import type { AskEvent, Source } from "@/lib/types";
+
+interface UiResult {
+  grounded: boolean;
+  answer: string;
+  sources: Source[];
+  topSimilarity: number;
+  floor: number;
+}
+type UiResp = { ok: true; result: UiResult } | { ok: false; error: string };
 
 // The fifteen 2026 Guiding Questions sections ("Are We There Yet?"), in syllabus order.
 // Selecting one seeds a starter question; the syllabus isn't split by subject anymore.
@@ -65,10 +74,14 @@ const ANSWER_SECTIONS = [
 
 /**
  * Split a structured answer into its labelled sections. Tolerant of stray
- * markdown around a heading (#, **, trailing colon). Returns null if the model
- * didn't follow the format, so the caller can fall back to plain prose.
+ * markdown around a heading (#, **, trailing colon). Returns null (so the caller
+ * falls back to plain prose) until at least `min` sections have content — 3 for
+ * a finished answer, 1 while streaming so headings appear as soon as they land.
  */
-function parseSections(text: string): { title: string; body: string }[] | null {
+function parseSections(
+  text: string,
+  min = 3,
+): { title: string; body: string }[] | null {
   const norm = (s: string) =>
     s
       .trim()
@@ -96,7 +109,25 @@ function parseSections(text: string): { title: string; body: string }[] | null {
     .map((s) => ({ title: s.title, body: s.body.trim() }))
     .filter((s) => s.body);
 
-  return filled.length >= 3 ? filled : null;
+  return filled.length >= min ? filled : null;
+}
+
+/** Render the answer as five labelled sections, or plain prose as a fallback. */
+function renderAnswerBody(text: string, streaming = false): ReactNode {
+  const sections = parseSections(text, streaming ? 1 : 3);
+  if (sections) {
+    return (
+      <div className="answer structured">
+        {sections.map((s) => (
+          <div className="ans-sec" key={s.title}>
+            <h3>{s.title}</h3>
+            <p>{renderAnswer(s.body)}</p>
+          </div>
+        ))}
+      </div>
+    );
+  }
+  return <div className="answer">{renderAnswer(text)}</div>;
 }
 
 function kindLabel(kind: "fact-list" | "concept"): string {
@@ -107,7 +138,8 @@ export default function Home() {
   const [question, setQuestion] = useState("");
   const [asked, setAsked] = useState("");
   const [pending, setPending] = useState(false);
-  const [resp, setResp] = useState<AskResponse | null>(null);
+  const [streamText, setStreamText] = useState("");
+  const [resp, setResp] = useState<UiResp | null>(null);
   const [themeLabel, setThemeLabel] = useState("Dark");
 
   useEffect(() => {
@@ -131,18 +163,74 @@ export default function Home() {
     setAsked(q);
     setPending(true);
     setResp(null);
+    setStreamText("");
     try {
-      const r = await ask({ question: q, subject: null });
-      setResp(r);
+      const res = await fetch("/api/ask", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ question: q }),
+      });
+      if (!res.ok || !res.body) throw new Error(`ask failed: ${res.status}`);
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+      let answer = "";
+
+      // Read the newline-delimited JSON stream, applying each event as it lands.
+      for (;;) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+
+        let nl: number;
+        while ((nl = buffer.indexOf("\n")) >= 0) {
+          const line = buffer.slice(0, nl).trim();
+          buffer = buffer.slice(nl + 1);
+          if (!line) continue;
+          const ev = JSON.parse(line) as AskEvent;
+
+          if (ev.type === "delta") {
+            answer += ev.text;
+            setStreamText(answer);
+          } else if (ev.type === "done") {
+            setResp({
+              ok: true,
+              result: {
+                grounded: true,
+                answer,
+                sources: ev.sources,
+                topSimilarity: ev.topSimilarity,
+                floor: ev.floor,
+              },
+            });
+          } else if (ev.type === "refused") {
+            setResp({
+              ok: true,
+              result: {
+                grounded: false,
+                answer: "",
+                sources: [],
+                topSimilarity: ev.topSimilarity,
+                floor: ev.floor,
+              },
+            });
+          } else if (ev.type === "error") {
+            setResp({ ok: false, error: ev.error });
+          }
+        }
+      }
     } catch {
       setResp({ ok: false, error: "Something went wrong. Please try again." });
     } finally {
       setPending(false);
+      setStreamText("");
     }
   }
 
   const result = resp?.ok ? resp.result : null;
   const grounded = result?.grounded ?? false;
+  const streaming = pending && streamText.length > 0;
 
   return (
     <div className="wrap">
@@ -251,7 +339,7 @@ export default function Home() {
         ))}
       </div>
 
-      {pending && (
+      {pending && !streaming && (
         <section className="result" aria-busy="true">
           <div className="r-head">
             <span className="status load">
@@ -265,6 +353,18 @@ export default function Home() {
           <div className="sk sk-line" style={{ width: "62%" }} />
           <div className="sk sk-src" />
           <div className="sk sk-src" />
+        </section>
+      )}
+
+      {streaming && (
+        <section className="result" aria-busy="true">
+          <div className="r-head">
+            <span className="status load">
+              <span className="dot" /> Writing the answer…
+            </span>
+          </div>
+          <p className="q-echo">{asked}</p>
+          {renderAnswerBody(streamText, true)}
         </section>
       )}
 
@@ -285,22 +385,7 @@ export default function Home() {
             </span>
           </div>
           <p className="q-echo">{asked}</p>
-          {(() => {
-            const sections = parseSections(result.answer);
-            if (sections) {
-              return (
-                <div className="answer structured">
-                  {sections.map((s) => (
-                    <div className="ans-sec" key={s.title}>
-                      <h3>{s.title}</h3>
-                      <p>{renderAnswer(s.body)}</p>
-                    </div>
-                  ))}
-                </div>
-              );
-            }
-            return <div className="answer">{renderAnswer(result.answer)}</div>;
-          })()}
+          {renderAnswerBody(result.answer)}
 
           {result.sources.length > 0 && (
             <div className="sources">
