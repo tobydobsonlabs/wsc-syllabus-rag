@@ -32,7 +32,9 @@ create index if not exists chunks_subjects_idx on chunks using gin (subjects);
 -- ingest, and match_chunks all keep working because they use the service role.
 alter table chunks enable row level security;
 
--- Retrieval RPC. subject_filter is optional (null = search everything).
+-- Retrieval RPC. subject_filter is optional (null = search everything). The UI
+-- no longer exposes a subject filter, but the parameter is kept so the deployed
+-- function signature stays stable; the app always calls it with null.
 create or replace function match_chunks(
   query_embedding vector(1024),
   match_count int,

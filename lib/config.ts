@@ -28,14 +28,3 @@ const PRICES: Record<string, [number, number]> = {
 };
 export const [INPUT_USD_PER_MTOK, OUTPUT_USD_PER_MTOK] =
   PRICES[ANTHROPIC_MODEL] ?? [1, 5];
-
-/** The six WSC subject areas, used for the optional retrieval filter. */
-export const SUBJECTS = [
-  "Science & Technology",
-  "Social Studies",
-  "History",
-  "Art & Music",
-  "Literature & Media",
-  "Special Area",
-] as const;
-export type Subject = (typeof SUBJECTS)[number];
