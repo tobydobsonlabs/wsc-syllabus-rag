@@ -278,7 +278,7 @@ export default function Home() {
         <section className="result">
           <div className="r-head">
             <span className="status ok">
-              <span className="dot" /> Grounded
+              <span className="dot" /> Grounded in the WSC 2026 Syllabus
             </span>
             <span className="count">
               {result.sources.length} source{result.sources.length === 1 ? "" : "s"} cited
