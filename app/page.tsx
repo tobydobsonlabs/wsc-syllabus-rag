@@ -32,19 +32,71 @@ const EXAMPLES = [
   "Who wrote the play Waiting for Godot?",
 ];
 
-/** Render answer text, turning [n] into citation chips that jump to the source. */
+/**
+ * Render answer text: turn [n] into citation chips that jump to the source, and
+ * render any *emphasis* the model slips in as italics rather than stray asterisks.
+ */
 function renderAnswer(text: string): ReactNode[] {
-  return text.split(/(\[\d+\])/g).map((part, i) => {
-    const m = part.match(/^\[(\d+)\]$/);
-    if (m) {
+  return text.split(/(\[\d+\]|\*[^*\n]+\*)/g).map((part, i) => {
+    const cite = part.match(/^\[(\d+)\]$/);
+    if (cite) {
       return (
-        <a key={i} className="cite" href={`#s${m[1]}`}>
-          {m[1]}
+        <a key={i} className="cite" href={`#s${cite[1]}`}>
+          {cite[1]}
         </a>
       );
     }
+    const em = part.match(/^\*([^*\n]+)\*$/);
+    if (em) {
+      return <em key={i}>{em[1]}</em>;
+    }
     return <span key={i}>{part}</span>;
   });
+}
+
+// The five sections the model is asked to produce for a grounded answer.
+const ANSWER_SECTIONS = [
+  "Short answer",
+  "Detailed explanation",
+  "Further background",
+  "Connections across the syllabus",
+  "Key idea to remember",
+];
+
+/**
+ * Split a structured answer into its labelled sections. Tolerant of stray
+ * markdown around a heading (#, **, trailing colon). Returns null if the model
+ * didn't follow the format, so the caller can fall back to plain prose.
+ */
+function parseSections(text: string): { title: string; body: string }[] | null {
+  const norm = (s: string) =>
+    s
+      .trim()
+      .replace(/^#+\s*/, "")
+      .replace(/\*+/g, "")
+      .replace(/:$/, "")
+      .trim()
+      .toLowerCase();
+
+  const sections: { title: string; body: string }[] = [];
+  let current: { title: string; body: string } | null = null;
+
+  for (const line of text.split(/\r?\n/)) {
+    const heading = ANSWER_SECTIONS.find((s) => norm(s) === norm(line));
+    if (heading) {
+      if (current) sections.push(current);
+      current = { title: heading, body: "" };
+    } else if (current) {
+      current.body += (current.body ? "\n" : "") + line;
+    }
+  }
+  if (current) sections.push(current);
+
+  const filled = sections
+    .map((s) => ({ title: s.title, body: s.body.trim() }))
+    .filter((s) => s.body);
+
+  return filled.length >= 3 ? filled : null;
 }
 
 function kindLabel(kind: "fact-list" | "concept"): string {
@@ -239,7 +291,22 @@ export default function Home() {
             </span>
           </div>
           <p className="q-echo">{asked}</p>
-          <div className="answer">{renderAnswer(result.answer)}</div>
+          {(() => {
+            const sections = parseSections(result.answer);
+            if (sections) {
+              return (
+                <div className="answer structured">
+                  {sections.map((s) => (
+                    <div className="ans-sec" key={s.title}>
+                      <h3>{s.title}</h3>
+                      <p>{renderAnswer(s.body)}</p>
+                    </div>
+                  ))}
+                </div>
+              );
+            }
+            return <div className="answer">{renderAnswer(result.answer)}</div>;
+          })()}
 
           {result.sources.length > 0 && (
             <div className="sources">
