@@ -172,20 +172,13 @@ body {
   border-color: var(--border-strong);
   color: var(--ink);
 }
-.purpose {
-  color: var(--muted);
-  font-size: 15px;
-  line-height: 1.6;
-  margin: 16px 0 24px;
-  max-width: 62ch;
-}
-
 .scope {
   display: flex;
   flex-wrap: wrap;
   gap: 12px 18px;
   align-items: center;
   justify-content: space-between;
+  margin-top: 26px;
   margin-bottom: 14px;
 }
 .gq {

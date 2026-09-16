@@ -104,7 +104,7 @@ function kindLabel(kind: "fact-list" | "concept"): string {
 }
 
 export default function Home() {
-  const [question, setQuestion] = useState(EXAMPLES[0]);
+  const [question, setQuestion] = useState("");
   const [asked, setAsked] = useState("");
   const [pending, setPending] = useState(false);
   const [resp, setResp] = useState<AskResponse | null>(null);
@@ -171,12 +171,6 @@ export default function Home() {
           {themeLabel}
         </button>
       </header>
-
-      <p className="purpose">
-        Ask about anything in this year&apos;s Guiding Questions and get a short answer tied to the
-        exact section it came from. If the syllabus doesn&apos;t cover it, the assistant says so
-        rather than guessing.
-      </p>
 
       <div className="scope">
         <label className="gq">

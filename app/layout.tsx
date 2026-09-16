@@ -46,6 +46,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="en"
+      data-theme="light"
       className={`${archivo.variable} ${jetbrainsMono.variable} ${playfair.variable}`}
     >
       <body>{children}</body>
