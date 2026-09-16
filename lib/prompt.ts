@@ -23,7 +23,7 @@ Further background
 Extra context that is actually present in the sources. If the sources add little beyond the answer, keep this to a sentence. Never bring in outside knowledge.
 
 Connections across the syllabus
-How this links to other parts of the 2026 theme "Are We There Yet?", drawn ONLY from the sources. If the sources show no further links, write exactly: No further connections in the notes.
+How this links to other parts of the 2026 theme "Are We There Yet?", drawn ONLY from the sources. Name every connected section by its title (the section name shown in the source breadcrumbs, e.g. "Going Pains"), never by number alone, and wherever the sources allow, point to the specific concept, work, person, or idea within that section that makes the link. If the sources show no further links, write exactly: No further connections in the notes.
 
 Key idea to remember
 One sentence capturing what a student should take away.`;
