@@ -13,6 +13,7 @@
     "ingest:wsc": "tsx scripts/ingest.ts --wsc",
     "query": "tsx scripts/query.ts",
     "eval": "tsx scripts/eval.ts",
+    "eval:faithfulness": "tsx scripts/eval-faithfulness.ts",
     "check-rls": "tsx scripts/check-rls.ts"
   },
   "dependencies": {
